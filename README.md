@@ -23,7 +23,7 @@ ShieldScan scans a domain's public-facing attack surface and generates a plain-E
 
 ## Price and Product Link
 
-**$39 one-time. Unlimited scans.**
+**$29 one-time. Unlimited scans.**
 
 Storefront: https://tgescllc.netlify.app
 
