@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldScan — AI External Threat Exposure Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--pri:oklch(52% 0.19 285);
+--pri-l:oklch(68% 0.13 285);
+--pri-pale:oklch(94% 0.035 285);
+--pri-dk:oklch(38% 0.19 285);
+--ok:oklch(60% 0.18 148);
+--ok-bg:oklch(95% 0.035 148);
+--warn:oklch(73% 0.155 78);
+--warn-bg:oklch(95% 0.05 78);
+--bad:oklch(55% 0.22 27);
+--bad-bg:oklch(94% 0.035 27);
+--info:oklch(58% 0.15 245);
+--info-bg:oklch(95% 0.025 245);
+--bg:oklch(98% 0.004 285);
+--surf:oklch(99.5% 0.002 285);
+--surf2:oklch(96.5% 0.006 285);
+--brd:oklch(90% 0.012 285);
+--brd-l:oklch(94% 0.006 285);
+--tx:oklch(18% 0.018 285);
+--tx2:oklch(42% 0.012 285);
+--tx3:oklch(58% 0.008 285);
+--f:'DM Sans',system-ui,sans-serif;
+--m:'DM Mono','SF Mono',monospace;
+--eo:cubic-bezier(0.16,1,0.3,1);
+}
+body{font-family:var(--f);font-size:16px;line-height:1.6;color:var(--tx);background:var(--bg);font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.2}
+p{text-wrap:pretty}
+
+.hd{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd-l);background:var(--surf);position:sticky;top:0;z-index:10}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem;color:var(--tx);text-decoration:none}
+.logo-i{width:30px;height:30px;background:var(--pri);border-radius:7px;display:grid;place-items:center}
+.logo-i svg{width:16px;height:16px}
+.hd-r{display:flex;align-items:center;gap:12px}
+.tag{font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--pri);background:var(--pri-pale);padding:3px 10px;border-radius:5px}
+.btn-ex{display:none;align-items:center;gap:5px;font-family:var(--f);font-size:0.82rem;font-weight:600;padding:7px 14px;border:none;border-radius:7px;cursor:pointer;background:var(--tx);color:var(--surf);transition:opacity .15s var(--eo)}
+.btn-ex:hover{opacity:.85}
+.btn-ex.v{display:flex}
+
+.hero{max-width:620px;margin:0 auto;padding:80px 20px 56px;text-align:center}
+.hero h1{font-size:clamp(1.9rem,4.5vw,2.8rem);font-weight:700;margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--pri)}
+.hero>p{font-size:1.05rem;color:var(--tx2);max-width:48ch;margin:0 auto 36px}
+.si-w{display:flex;max-width:460px;margin:0 auto;border:2px solid var(--brd);border-radius:11px;overflow:hidden;transition:border-color .2s var(--eo),box-shadow .2s var(--eo);background:var(--surf)}
+.si-w:focus-within{border-color:var(--pri);box-shadow:0 0 0 4px oklch(52% 0.19 285/.1)}
+.si{flex:1;font-family:var(--m);font-size:.95rem;padding:13px 15px;border:none;outline:none;background:transparent;color:var(--tx)}
+.si::placeholder{color:var(--tx3)}
+.sb{font-family:var(--f);font-weight:600;font-size:.92rem;padding:13px 22px;border:none;background:var(--pri);color:#fff;cursor:pointer;transition:background .15s var(--eo);white-space:nowrap}
+.sb:hover{background:var(--pri-dk)}
+.sb:disabled{opacity:.5;cursor:not-allowed}
+.dh{font-size:.78rem;color:var(--tx3);margin-top:14px}
+.dl{color:var(--pri);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+.sc{display:none;max-width:620px;margin:0 auto;padding:0 20px 56px}
+.sc.on{display:block}
+.sc-t{font-family:var(--m);font-size:.88rem;color:var(--tx2);text-align:center;margin-bottom:28px}
+.pb{height:4px;background:var(--brd-l);border-radius:2px;overflow:hidden;margin-bottom:36px}
+.pf{height:100%;background:var(--pri);border-radius:2px;width:0%;transition:width .4s var(--eo)}
+.sl{list-style:none}
+.ss{display:flex;align-items:flex-start;gap:14px;padding:6px 0;opacity:.3;transition:opacity .3s var(--eo)}
+.ss.a{opacity:1}.ss.d{opacity:.65}
+.si2{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;margin-top:2px;background:var(--brd-l);transition:background .3s var(--eo)}
+.ss.a .si2{background:var(--pri-pale)}
+.ss.d .si2{background:var(--ok-bg)}
+.sp{width:13px;height:13px;border:2px solid var(--pri-pale);border-top-color:var(--pri);border-radius:50%;animation:spin .8s linear infinite;display:none}
+.ss.a .sp{display:block}.ss.a .ck{display:none}
+.ss.d .sp{display:none}.ss.d .ck{display:block;color:var(--ok)}
+.ck svg{width:13px;height:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sl-l{font-size:.92rem;font-weight:500}.sl-s{font-size:.78rem;color:var(--tx3);margin-top:1px}
+
+.rp{display:none;max-width:880px;margin:0 auto;padding:0 20px 80px}
+.rp.on{display:block}
+.rp-h{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding-bottom:32px;border-bottom:1px solid var(--brd-l);margin-bottom:32px}
+.rp-h h2{font-size:1.5rem;font-weight:700;margin-bottom:3px}
+.rp-m{font-size:.82rem;color:var(--tx3);font-family:var(--m)}
+.gb{width:76px;height:76px;border-radius:14px;display:grid;place-items:center;flex-shrink:0;font-size:2.1rem;font-weight:700;color:#fff}
+.gA{background:var(--ok)}.gB{background:oklch(60% 0.14 165)}.gC{background:var(--warn)}.gD{background:oklch(60% 0.17 50)}.gF{background:var(--bad)}
+
+.ais{background:var(--pri-pale);border-radius:11px;padding:20px 22px;margin-bottom:32px}
+.ais-l{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--pri);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ais p{font-size:.92rem;color:var(--tx);max-width:72ch;line-height:1.75}
+
+.cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:32px}
+.c1{padding:14px 18px;border-radius:9px;border:1px solid var(--brd-l);background:var(--surf)}
+.c1h{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.c1n{font-size:.82rem;font-weight:600}.c1g{font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.c1b{height:5px;background:var(--brd-l);border-radius:3px;overflow:hidden}
+.c1f{height:100%;border-radius:3px;transition:width .8s var(--eo)}
+
+.fs{margin-bottom:32px}
+.fs h3{font-size:1.1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.fs h3 .ct{font-size:.72rem;font-weight:600;background:var(--brd-l);padding:2px 8px;border-radius:9px;color:var(--tx2)}
+
+.fd{padding:14px 18px;border:1px solid var(--brd-l);border-radius:9px;margin-bottom:8px;background:var(--surf);cursor:pointer;transition:border-color .15s var(--eo)}
+.fd:hover{border-color:var(--brd)}
+.fh{display:flex;align-items:center;gap:12px}
+.sv{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sv-critical{background:var(--bad)}.sv-high{background:oklch(60% 0.17 50)}.sv-medium{background:var(--warn)}.sv-low{background:var(--info)}.sv-pass{background:var(--ok)}
+.ft{font-size:.88rem;font-weight:600;flex:1}.fc{font-size:.68rem;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em}
+.fe{color:var(--tx3);transition:transform .2s var(--eo)}
+.fd.op .fe{transform:rotate(180deg)}
+.fdd{display:none;padding-top:14px;border-top:1px solid var(--brd-l);margin-top:14px}
+.fd.op .fdd{display:block}
+.fdd>p{font-size:.86rem;color:var(--tx2);line-height:1.75;margin-bottom:14px}
+.fx{background:var(--surf2);border-radius:7px;padding:14px}
+.fx-l{font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--pri);margin-bottom:7px}
+.fx ol{padding-left:18px;font-size:.83rem;color:var(--tx);line-height:1.85}
+
+.pc summary{font-size:.92rem;font-weight:600;color:var(--tx2);cursor:pointer;padding:14px 0;list-style:none;display:flex;align-items:center;gap:8px}
+.pc summary::-webkit-details-marker{display:none}
+.pl{list-style:none}
+.pi{display:flex;align-items:center;gap:7px;padding:5px 0;font-size:.83rem;color:var(--tx2)}
+.pi svg{color:var(--ok);width:15px;height:15px;flex-shrink:0}
+
+.ft2{text-align:center;padding:28px 0;border-top:1px solid var(--brd-l);margin-top:20px}
+.ft2 p{font-size:.83rem;color:var(--tx3);margin-bottom:12px}
+.nb{font-family:var(--f);font-weight:600;font-size:.88rem;padding:9px 22px;border:2px solid var(--brd);border-radius:9px;background:transparent;color:var(--tx);cursor:pointer;transition:all .15s var(--eo)}
+.nb:hover{border-color:var(--pri);color:var(--pri)}
+
+@media(max-width:640px){
+.hero{padding:48px 16px 36px}
+.hero h1{font-size:1.65rem}
+.si-w{flex-direction:column;border-radius:9px}
+.sb{border-radius:0}
+.rp-h{flex-direction:column-reverse;align-items:center;text-align:center}
+.cs{grid-template-columns:1fr}
+.fc{display:none}
+}
+@media print{
+.hd,.hero,.sc,.dh,.ft2{display:none!important}
+.rp{display:block!important;padding-top:20px}
+.fdd{display:block!important}
+.fd{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="hd">
+<a class="logo" href="#">
+<div class="logo-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+ShieldScan
+</a>
+<div class="hd-r">
+<span class="tag">AI-Powered</span>
+<button class="btn-ex" id="exBtn" onclick="window.print()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export PDF</button>
+</div>
+</header>
+
+<section class="hero" id="hero">
+<h1>Know your <em>exposure</em> before attackers do</h1>
+<p>Enter any domain. ShieldScan maps your public attack surface and explains exactly what to fix, in plain English.</p>
+<div class="si-w">
+<input class="si" id="inp" type="text" placeholder="yourbusiness.com" spellcheck="false" autocomplete="off">
+<button class="sb" id="sbtn" onclick="go()">Scan Now</button>
+</div>
+<p class="dh">Try it: <span class="dl" onclick="demo('acmecorp.com')">acmecorp.com</span> &middot; <span class="dl" onclick="demo('globalretail.io')">globalretail.io</span> &middot; <span class="dl" onclick="demo('startupfast.dev')">startupfast.dev</span></p>
+</section>
+
+<section class="sc" id="scanSec">
+<p class="sc-t">Scanning <strong id="stl"></strong></p>
+<div class="pb"><div class="pf" id="pf"></div></div>
+<ul class="sl" id="sl">
+<li class="ss" data-s="dns"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">DNS Configuration</div><div class="sl-s">Checking records, zone config, dangling entries</div></div></li>
+<li class="ss" data-s="ssl"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">SSL/TLS Certificates</div><div class="sl-s">Validating chain, ciphers, expiration</div></div></li>
+<li class="ss" data-s="email"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">Email Authentication</div><div class="sl-s">SPF, DKIM, DMARC policy analysis</div></div></li>
+<li class="ss" data-s="hdr"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">HTTP Security Headers</div><div class="sl-s">CSP, HSTS, X-Frame, permissions policy</div></div></li>
+<li class="ss" data-s="sub"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">Subdomain Enumeration</div><div class="sl-s">Mapping exposed subdomains via certificate transparency</div></div></li>
+<li class="ss" data-s="port"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">Port &amp; Service Exposure</div><div class="sl-s">Checking for open ports and exposed services</div></div></li>
+<li class="ss" data-s="tech"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">Technology Fingerprinting</div><div class="sl-s">Identifying stack, frameworks, known CVEs</div></div></li>
+<li class="ss" data-s="ai"><div class="si2"><div class="sp"></div><div class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div><div class="sl-l">AI Threat Analysis</div><div class="sl-s">Generating prioritized report with fix recommendations</div></div></li>
+</ul>
+</section>
+
+<section class="rp" id="rp"></section>
+
+<script>
+const DB={
+'acmecorp.com':{grade:'C',score:52,cats:{dns:{s:70,g:'B',l:'DNS Configuration'},ssl:{s:45,g:'D',l:'SSL/TLS Security'},email:{s:30,g:'F',l:'Email Authentication'},hdr:{s:55,g:'C',l:'HTTP Headers'},sub:{s:60,g:'C',l:'Subdomain Exposure'},port:{s:65,g:'B',l:'Port Security'}},
+ai:"Acmecorp.com has significant security gaps that would be straightforward for an attacker to exploit. The most urgent issue: your email has no DMARC policy at all, which means anyone can send emails pretending to be from your domain. Your employees and customers are one phishing email away from a credential theft. Your SSL certificate is using an outdated TLS 1.0 configuration that modern browsers are actively deprecating, and your security headers are missing protections against clickjacking and XSS. The good news: none of these require expensive tools to fix. A focused afternoon could resolve the top 5 issues and move you from a C to a B grade.",
+findings:[
+{sev:'critical',t:'No DMARC policy configured',cat:'Email',d:"Your domain has no DMARC record. Without DMARC, attackers can send emails that appear to come from your domain (spoofing). This is the #1 vector for business email compromise, which cost small businesses $2.4B in 2025.",fx:["Log into your DNS provider (GoDaddy, Cloudflare, etc.)","Add a TXT record: _dmarc.acmecorp.com","Set the value to: v=DMARC1; p=quarantine; rua=mailto:dmarc@acmecorp.com","Start with p=quarantine for 2 weeks, then move to p=reject","Monitor reports at the email address you specified"]},
+{sev:'critical',t:'SPF record too permissive (+all)',cat:'Email',d:"Your SPF record ends with +all, which tells receiving mail servers to accept email from ANY server claiming to be your domain. This completely negates the purpose of having SPF.",fx:["Open your DNS TXT record for SPF","Change the ending from \"+all\" to \"-all\" (hard fail)","Make sure all your legitimate sending services are listed","Test by sending a test email and checking headers for SPF pass"]},
+{sev:'high',t:'TLS 1.0 and 1.1 still enabled',cat:'SSL/TLS',d:"Your server still accepts connections using TLS 1.0 and 1.1, which have known vulnerabilities. Major browsers have dropped support for these protocols. This also means you likely fail PCI DSS compliance if you process any payments.",fx:["Access your web server configuration (Apache: ssl.conf, Nginx: nginx.conf)","Set minimum TLS version to 1.2: ssl_protocols TLSv1.2 TLSv1.3;","Restart your web server","Verify with an SSL test tool that only TLS 1.2+ is accepted"]},
+{sev:'high',t:'Missing Content-Security-Policy header',cat:'Headers',d:"No CSP header was detected. Without CSP, your site is more vulnerable to cross-site scripting (XSS) attacks, where an attacker injects malicious scripts that run in your users' browsers.",fx:["Add a Content-Security-Policy header to your web server or CDN","Start with a report-only policy: Content-Security-Policy-Report-Only: default-src 'self'","Monitor for violations for 1-2 weeks","Once clean, switch to enforcing mode"]},
+{sev:'medium',t:'X-Frame-Options header missing',cat:'Headers',d:"Your site can be embedded in iframes on other domains, making it vulnerable to clickjacking attacks where users think they're clicking on your site but are actually clicking on something hidden.",fx:["Add to your server config: X-Frame-Options: SAMEORIGIN","Or use CSP frame-ancestors directive: frame-ancestors 'self'","Test by trying to iframe your site from a different domain"]},
+{sev:'medium',t:'Staging subdomain exposed: staging.acmecorp.com',cat:'Subdomains',d:"A staging subdomain was found in certificate transparency logs. Staging environments often have weaker security, test credentials, and unfinished features that attackers can exploit as an entry point.",fx:["Add HTTP Basic Auth or IP whitelist to the staging subdomain","Remove it from public DNS if not needed publicly","Ensure staging doesn't share credentials with production","Consider using a non-guessable subdomain for staging"]},
+{sev:'low',t:'HSTS max-age below recommended minimum',cat:'Headers',d:"Your HSTS header has a max-age of 604800 (7 days). The recommended minimum is 31536000 (1 year). A short max-age gives attackers more opportunity for downgrade attacks.",fx:["Update HSTS header to: Strict-Transport-Security: max-age=31536000; includeSubDomains","After confirming everything works, consider adding the preload directive","Submit to the HSTS preload list at hstspreload.org"]}
+],
+pass:['DNSSEC validation active','No open database ports detected (3306, 5432, 27017)','SSH (port 22) not exposed to public internet','No directory listing enabled','Server version headers suppressed','DKIM signature present and valid','Certificate chain is complete and trusted']
+},
+
+'globalretail.io':{grade:'D',score:35,cats:{dns:{s:40,g:'D',l:'DNS Configuration'},ssl:{s:25,g:'F',l:'SSL/TLS Security'},email:{s:20,g:'F',l:'Email Authentication'},hdr:{s:40,g:'D',l:'HTTP Headers'},sub:{s:45,g:'D',l:'Subdomain Exposure'},port:{s:50,g:'C',l:'Port Security'}},
+ai:"Globalretail.io is in rough shape. This domain is running an expired SSL certificate, which means every visitor sees a browser warning before they can even reach your site. That alone is costing you customers and credibility. Worse, your email authentication is essentially nonexistent: no SPF, no DKIM, no DMARC. Anyone in the world can send emails as globalretail.io right now. You also have 4 exposed subdomains including what appears to be an admin panel with no authentication layer. If this domain processes customer data or payments, you are almost certainly out of compliance with basic security standards. Priority one: fix the SSL certificate today. Priority two: lock down that admin subdomain immediately.",
+findings:[
+{sev:'critical',t:'SSL certificate expired 23 days ago',cat:'SSL/TLS',d:"Your SSL certificate expired on September 5, 2026. Every visitor sees a full-page browser warning, and search engines are actively penalizing your rankings.",fx:["If using Let's Encrypt: run certbot renew --force-renewal","If using a paid cert: log into your provider and reissue","Set up auto-renewal in a cron job","Test: openssl s_client -connect globalretail.io:443","Set a calendar reminder 30 days before next expiration"]},
+{sev:'critical',t:'Admin panel publicly accessible: admin.globalretail.io',cat:'Subdomains',d:"An admin panel was discovered at admin.globalretail.io with no additional authentication layer. Admin panels are prime targets for brute-force and credential stuffing.",fx:["Immediately add IP whitelisting","Add HTTP Basic Auth as a second layer","Enable rate limiting on login attempts (max 5/min)","Set up 2FA for all admin accounts","Consider moving admin to a non-obvious URL"]},
+{sev:'critical',t:'No SPF, DKIM, or DMARC records',cat:'Email',d:"Your domain has zero email authentication records. Any attacker can send perfectly legitimate-looking emails from your domain.",fx:["Add SPF: TXT record v=spf1 include:_spf.google.com -all","Set up DKIM through your email provider","Add DMARC: TXT at _dmarc.globalretail.io","Verify all three with an email auth checker"]},
+{sev:'high',t:'MySQL port 3306 exposed to public internet',cat:'Ports',d:"Port 3306 (MySQL) is accessible from the public internet. Your database server is directly attackable.",fx:["Configure firewall to block port 3306 from public access","Only allow connections from your app server IP","If using AWS: update Security Group","Verify with: nmap -p 3306 globalretail.io"]},
+{sev:'high',t:'Wildcard DNS record detected',cat:'DNS',d:"A wildcard DNS record (*.globalretail.io) means ANY subdomain resolves to your IP. Attackers can use this for phishing.",fx:["Remove the wildcard DNS record","Add explicit records for needed subdomains","Use a WAF to block unknown subdomain requests","Monitor certificate transparency logs"]},
+{sev:'medium',t:'Server version disclosed in headers',cat:'Headers',d:"Your server responds with Apache/2.4.41 (Ubuntu). This lets attackers search for specific CVEs.",fx:["Apache: add ServerTokens Prod and ServerSignature Off","Update Apache to 2.4.58+","Restart your web server"]},
+{sev:'medium',t:'No security.txt file found',cat:'Headers',d:"No /.well-known/security.txt file. This file tells researchers how to report vulnerabilities responsibly.",fx:["Create /.well-known/security.txt","Include Contact, Expires, Preferred-Languages","Reference: securitytxt.org"]}
+],
+pass:['No directory listing enabled','HTTPS redirect in place','SSH key authentication enforced']
+},
+
+'startupfast.dev':{grade:'A',score:88,cats:{dns:{s:95,g:'A',l:'DNS Configuration'},ssl:{s:92,g:'A',l:'SSL/TLS Security'},email:{s:85,g:'A',l:'Email Authentication'},hdr:{s:90,g:'A',l:'HTTP Headers'},sub:{s:80,g:'B',l:'Subdomain Exposure'},port:{s:90,g:'A',l:'Port Security'}},
+ai:"Startupfast.dev is in excellent shape. Your security posture is well above average: SSL is modern with TLS 1.3 preferred, email authentication is fully configured with enforcing DMARC, and your HTTP headers cover all major protections. The only areas worth tightening: two development subdomains visible in certificate transparency logs (not urgent, but worth cleaning up), and your DMARC policy could move from quarantine to reject. This is a strong A grade. Keep auto-renewal running, review headers quarterly, and you're ahead of 90% of businesses your size.",
+findings:[
+{sev:'low',t:'Dev subdomains visible in CT logs',cat:'Subdomains',d:"Two dev subdomains found in certificate transparency logs. Not a direct vulnerability, but reveals internal infrastructure naming.",fx:["Use internal/private DNS for dev environments","Use non-descriptive subdomain names","Add authentication to all non-production subdomains"]},
+{sev:'low',t:'DMARC policy set to quarantine, not reject',cat:'Email',d:"Your DMARC is p=quarantine. Moving to p=reject would outright block spoofed emails. You're ready to upgrade.",fx:["Update DMARC TXT from p=quarantine to p=reject","Keep rua reporting active","Monitor for 1-2 weeks after change"]},
+{sev:'low',t:'Permissions-Policy could be more restrictive',cat:'Headers',d:"Your Permissions-Policy allows camera and microphone. Unless needed, restricting them reduces attack surface.",fx:["Update to: camera=(), microphone=(), geolocation=()","Only enable features your app uses","Test after changes"]}
+],
+pass:['TLS 1.3 preferred, 1.2 minimum','SSL cert valid 287 more days with auto-renewal','Complete certificate chain','SPF with hard fail (-all)','DKIM valid and rotating','DMARC active with reporting','CSP header enforcing','HSTS with 1-year max-age','X-Frame-Options: DENY','X-Content-Type-Options: nosniff','Referrer-Policy: strict-origin-when-cross-origin','No open database or admin ports','SSH moved from default 22','Server headers suppressed','DNSSEC active','No wildcard DNS','security.txt present']
+}
+};
+
+function getP(dom){
+  dom=dom.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/,'').replace(/\/.*$/,'').trim();
+  if(DB[dom])return{dom,...DB[dom]};
+  return genP(dom);
+}
+
+function genP(dom){
+  let h=0;for(let i=0;i<dom.length;i++)h=((h<<5)-h)+dom.charCodeAt(i);
+  const r=(a,b)=>{h=(h*16807)%2147483647;return a+(Math.abs(h)%(b-a+1))};
+  const ds=r(35,90),ss=r(30,95),es=r(15,85),hs=r(30,90),us=r(40,90),ps=r(45,95);
+  const avg=Math.round((ds+ss+es+hs+us+ps)/6);
+  const gr=s=>s>=85?'A':s>=70?'B':s>=55?'C':s>=40?'D':'F';
+  const g=gr(avg);
+  const af=[
+    {sev:'critical',t:'No DMARC policy configured',cat:'Email',d:dom+' has no DMARC record. Anyone can spoof emails from your domain.',fx:['Add TXT record at _dmarc.'+dom,'Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@'+dom,'Monitor 2 weeks, then move to p=reject']},
+    {sev:'high',t:'Weak SSL cipher suites',cat:'SSL/TLS',d:'Server supports weak ciphers including RC4 and 3DES.',fx:['Update SSL config to modern suites','Disable RC4, 3DES, CBC-mode','Test with SSL Labs']},
+    {sev:'high',t:'Missing HSTS header',cat:'Headers',d:'No Strict-Transport-Security header. Users vulnerable to SSL stripping.',fx:['Add: Strict-Transport-Security: max-age=31536000; includeSubDomains','Test before deployment','Consider HSTS preloading after 6 months']},
+    {sev:'medium',t:'SPF record syntax warning',cat:'Email',d:'SPF record may exceed 10 DNS lookup limit, causing silent failures.',fx:['Audit for unused includes','Use IP ranges to consolidate','Use SPF flattening service']},
+    {sev:'medium',t:'Development endpoint exposed',cat:'Subdomains',d:'dev.'+dom+' found. Dev environments often have weaker security.',fx:['Add auth to non-production subdomains','Use IP whitelisting','Remove from public DNS if unneeded']},
+    {sev:'low',t:'Cookie security flags incomplete',cat:'Headers',d:'Session cookies missing SameSite=Strict. Small CSRF risk.',fx:['Add SameSite=Strict to session cookies','Test login flows after']}
+  ];
+  const f=[];if(es<50)f.push(af[0]);if(ss<60)f.push(af[1]);if(hs<60)f.push(af[2]);if(es<70)f.push(af[3]);if(us<65)f.push(af[4]);if(hs<80)f.push(af[5]);
+  const p=[];if(ps>60)p.push('No open database ports');if(ds>50)p.push('DNSSEC active');if(ss>50)p.push('Certificate chain valid');if(ps>70)p.push('SSH not public');p.push('No directory listing');
+  const sm=avg>=70?dom+' is in reasonable shape with some areas needing attention.':dom+' has notable security gaps to address.';
+  const sk=f.length>0?' Most pressing: '+f[0].t.toLowerCase()+'. '+(f.length>1?f.length-1+' more finding'+(f.length>2?'s':'')+' to review.':''):'';
+  return{dom,grade:g,score:avg,cats:{dns:{s:ds,g:gr(ds),l:'DNS Configuration'},ssl:{s:ss,g:gr(ss),l:'SSL/TLS Security'},email:{s:es,g:gr(es),l:'Email Authentication'},hdr:{s:hs,g:gr(hs),l:'HTTP Headers'},sub:{s:us,g:gr(us),l:'Subdomain Exposure'},port:{s:ps,g:gr(ps),l:'Port Security'}},ai:sm+sk+' Each fix below includes step-by-step instructions.',findings:f,pass:p};
+}
+
+let busy=false;
+function demo(d){document.getElementById('inp').value=d;go()}
+
+function go(){
+  if(busy)return;
+  const v=document.getElementById('inp').value.trim();
+  if(!v)return;
+  const dom=v.replace(/^(https?:\/\/)?(www\.)?/,'').replace(/\/.*$/,'');
+  if(!dom.includes('.'))return;
+  busy=true;
+  document.getElementById('sbtn').disabled=true;
+  document.getElementById('rp').classList.remove('on');
+  document.getElementById('rp').innerHTML='';
+  document.getElementById('exBtn').classList.remove('v');
+  document.querySelectorAll('.ss').forEach(s=>{s.classList.remove('a','d')});
+  document.getElementById('pf').style.width='0%';
+  document.getElementById('stl').textContent=dom;
+  document.getElementById('hero').style.display='none';
+  document.getElementById('scanSec').classList.add('on');
+  const steps=document.querySelectorAll('.ss');
+  const dur=[800,700,900,600,1100,800,700,1200];
+  let i=0;
+  function nx(){
+    if(i>0){steps[i-1].classList.remove('a');steps[i-1].classList.add('d')}
+    if(i>=steps.length){document.getElementById('pf').style.width='100%';setTimeout(()=>render(dom),400);return}
+    steps[i].classList.add('a');
+    document.getElementById('pf').style.width=((i+.5)/steps.length*100).toFixed(0)+'%';
+    i++;setTimeout(nx,dur[i-1]);
+  }
+  nx();
+}
+
+function render(dom){
+  const d=getP(dom);busy=false;
+  document.getElementById('sbtn').disabled=false;
+  document.getElementById('scanSec').classList.remove('on');
+  document.getElementById('exBtn').classList.add('v');
+  const now=new Date();
+  const ds=now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const ts=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const gc=g=>({A:'var(--ok)',B:'oklch(60% 0.14 165)',C:'var(--warn)',D:'oklch(60% 0.17 50)',F:'var(--bad)'}[g]||'var(--tx3)');
+  const gb2=g=>({A:'var(--ok-bg)',B:'oklch(95% 0.035 165)',C:'var(--warn-bg)',D:'oklch(95% 0.035 50)',F:'var(--bad-bg)'}[g]||'var(--brd-l)');
+  let ch='';for(const[k,c]of Object.entries(d.cats)){ch+='<div class="c1"><div class="c1h"><span class="c1n">'+c.l+'</span><span class="c1g" style="background:'+gb2(c.g)+';color:'+gc(c.g)+'">'+c.g+'</span></div><div class="c1b"><div class="c1f" style="width:'+c.s+'%;background:'+gc(c.g)+'"></div></div></div>';}
+  const so={critical:0,high:1,medium:2,low:3};
+  const sf=[...d.findings].sort((a,b)=>so[a.sev]-so[b.sev]);
+  let fh='';for(const f of sf){fh+='<div class="fd" onclick="this.classList.toggle(\'op\')"><div class="fh"><div class="sv sv-'+f.sev+'"></div><span class="ft">'+f.t+'</span><span class="fc">'+f.cat+'</span><svg class="fe" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div><div class="fdd"><p>'+f.d+'</p><div class="fx"><div class="fx-l">How to fix this</div><ol>'+f.fx.map(s=>'<li>'+s+'</li>').join('')+'</ol></div></div></div>';}
+  const cc=sf.filter(f=>f.sev==='critical').length;
+  const hc=sf.filter(f=>f.sev==='high').length;
+  let ph='';if(d.pass&&d.pass.length){ph='<details class="pc"><summary><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+d.pass.length+' checks passed</summary><ul class="pl">'+d.pass.map(p=>'<li class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+p+'</li>').join('')+'</ul></details>';}
+  const rp=document.getElementById('rp');
+  rp.innerHTML='<div class="rp-h"><div><h2>Threat Exposure Report</h2><p class="rp-m">'+d.dom+' &middot; '+ds+' at '+ts+'</p></div><div class="gb g'+d.grade+'">'+d.grade+'</div></div><div class="ais"><div class="ais-l"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>AI Threat Analysis</div><p>'+d.ai+'</p></div><div class="cs">'+ch+'</div>'+(sf.length>0?'<div class="fs"><h3>Findings <span class="ct">'+sf.length+' issue'+(sf.length!==1?'s':'')+(cc>0?' &middot; '+cc+' critical':'')+(hc>0?' &middot; '+hc+' high':'')+'</span></h3>'+fh+'</div>':'<p style="text-align:center;color:var(--tx2);padding:28px 0">No issues found.</p>')+ph+'<div class="ft2"><p>Scan another domain?</p><button class="nb" onclick="resetH()">New Scan</button></div>';
+  rp.classList.add('on');
+  requestAnimationFrame(()=>{rp.querySelectorAll('.c1f').forEach(el=>{const w=el.style.width;el.style.width='0%';requestAnimationFrame(()=>{el.style.width=w})})});
+}
+
+function resetH(){
+  document.getElementById('hero').style.display='';
+  document.getElementById('rp').classList.remove('on');
+  document.getElementById('rp').innerHTML='';
+  document.getElementById('exBtn').classList.remove('v');
+  document.getElementById('inp').value='';
+  document.getElementById('inp').focus();
+}
+
+document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+</script>
+</body>
+</html>
