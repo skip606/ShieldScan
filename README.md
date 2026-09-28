@@ -2,54 +2,49 @@
 
 **Know your exposure before attackers do.**
 
-ShieldScan scans any domain's public-facing attack surface and generates a plain-English AI threat report with prioritized, step-by-step fixes. Built for small businesses who can't afford $10k/year enterprise security tools.
+ShieldScan scans a domain's public-facing attack surface and generates a plain-English threat report with prioritized, step-by-step fixes. Built for small businesses that need a useful first pass without enterprise pricing or unnecessary telemetry.
 
 ## What It Scans
 
-- **DNS Configuration** — Records, zone config, dangling entries, DNSSEC
-- **SSL/TLS Security** — Certificate chain, cipher suites, protocol versions, expiration
-- **Email Authentication** — SPF, DKIM, DMARC policy analysis and scoring
-- **HTTP Security Headers** — CSP, HSTS, X-Frame-Options, Permissions-Policy
-- **Subdomain Exposure** — Certificate transparency log enumeration, risk assessment
-- **Port & Service Exposure** — Open ports, exposed services, database access
-- **Technology Fingerprinting** — Stack identification, framework detection, known CVEs
+- **DNS Configuration** — A, AAAA, MX, NS, TXT, and CNAME records
+- **Email Authentication** — SPF, DKIM, and DMARC policy analysis
+- **Certificate Transparency** — Public subdomain enumeration through crt.sh
+- **HTTP Security** — HTTPS reachability, redirects, server headers, HSTS, CSP, clickjacking protection, and content-type sniffing
+- **AI Threat Analysis** — Plain-English findings with prioritized remediation steps
 
 ## Features
 
-- **AI Threat Analysis** — Plain-English executive summary of your security posture
-- **Risk Scoring** — A-F letter grade with category breakdowns
-- **Step-by-Step Fixes** — Every finding includes exact remediation instructions
-- **PDF Export** — One-click report export for sharing with your team
+- **Risk Scoring** — A-F grade with category breakdowns
+- **Step-by-Step Fixes** — Every finding includes practical remediation instructions
+- **Raw Scan Data** — Transparent underlying results in the report
+- **PDF Export** — One-click report export for sharing
 - **Zero Install** — Runs entirely in the browser
-- **Privacy-First** — Scans only publicly available data, no agents or credentials needed
+- **Privacy-First** — Public-domain checks only, no agents, no credentials, no telemetry
 
-## Price
+## Price and Product Link
 
-$39 one-time purchase. Unlimited scans.
+**$39 one-time. Unlimited scans.**
 
-## Demo
+Storefront: https://tgescllc.netlify.app
 
-Try the built-in demo domains:
-- `acmecorp.com` — Grade C, significant email and SSL gaps
-- `globalretail.io` — Grade D, expired cert and exposed admin panel
-- `startupfast.dev` — Grade A, well-secured with minor improvements
+ShieldScan is a first-pass awareness tool. It is not a penetration test, compliance certification, or replacement for managed security services.
+
+## Current App
+
+The production entrypoint is `index.html`. It performs live browser-based checks against Cloudflare DNS-over-HTTPS, crt.sh certificate transparency, and public HTTPS endpoints. `shieldscan.html` is retained as the earlier demo build.
 
 ## Tech Stack
 
-- Single HTML file, zero dependencies
-- Pure CSS (OKLCH color space, responsive)
+- Single HTML file, zero runtime dependencies
 - Vanilla JavaScript
-- Google Fonts (DM Sans, DM Mono)
+- Responsive CSS with OKLCH color tokens
+- DM Sans and DM Mono via Google Fonts
 
 ## Deployment
 
-Drop `index.html` on any static host (Netlify, Vercel, GitHub Pages).
+Deploy `index.html` on any static host such as Netlify, Vercel, or GitHub Pages.
 
-For production scanning capabilities, connect to backend APIs for:
-- DNS-over-HTTPS (Cloudflare/Google)
-- Certificate Transparency logs
-- Port scanning service
-- HTTP header inspection proxy
+For deeper production coverage, add a backend proxy or service for checks that browsers cannot perform directly, including port scanning, full certificate inspection, and complete response-header analysis.
 
 ## License
 
