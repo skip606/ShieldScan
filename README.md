@@ -38,10 +38,11 @@ The platform runs Stripe. This app never touches Stripe, never renders card fiel
 | `GET /app` | **The paid scanner.** Server calls `GET /paid?user=<buyer>&product=shieldscan_license` and serves the scanner only when `paid === true`. Unpaid buyers are redirected to pricing. If `/paid` errors or is unreachable, access stays locked and a "try again" screen is shown. |
 | `POST /api/checkout` | Validates the price key against the live catalog, then `POST /checkout` with a fresh `Idempotency-Key`. Returns the hosted checkout URL to redirect to. |
 | `POST /api/portal` | `POST /portal` for billing management. A one-time buyer gets a friendly "nothing to manage" message (404 `NO_BILLING_CUSTOMER`). |
-| `GET /api/access` | Display-only access status for the pricing page. Never used for gating. |
+| `POST /api/restore` | Restores a license on a new browser from a license key (server-verified via `/paid`). |
+| `GET /api/access` | Display-only access status (and the owner's license key) for the pricing page. Never used for gating. |
 | `GET /healthz` | Health check. |
 
-**Buyer id:** a random guest token (`g_<uuid>`) kept in an HttpOnly cookie. The same value is sent to `/paid`, `/checkout` and `/portal`, and is never taken from the client request body. Note: access is tied to that browser; clearing cookies or switching devices loses it until real accounts (e.g. email magic links) are added.
+**Buyer id / license key:** a random guest token (`g_<uuid>`) kept in an HttpOnly cookie. The same value is sent to `/paid`, `/checkout` and `/portal`, and is never taken from the checkout request body. After purchase the pricing page shows it as the buyer's **license key**. Pasting it into "Restore with your license key" (`POST /api/restore`) verifies it with `/paid` on the server, then binds this browser to it, so access survives cleared cookies and new devices. Keys are unguessable UUIDs and restore is rate-limited per IP.
 
 No consumables are sold, so `/purchases` and a `granted_purchases` table are not needed. If credits are ever added, drain `GET /purchases` server-side with an insert-if-new `granted_purchases (id TEXT PRIMARY KEY)` table.
 

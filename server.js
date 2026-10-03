@@ -83,14 +83,31 @@ function parseCookies(req) {
   return out;
 }
 
+function setBuyerCookie(req, res, id) {
+  const secure = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${COOKIE}=${id}; Path=/; Max-Age=315360000; HttpOnly; SameSite=Lax${secure}`);
+}
+
 function buyerId(req, res) {
   let id = parseCookies(req)[COOKIE];
   if (!id || !BUYER_RE.test(id)) {
     id = 'g_' + crypto.randomUUID();
-    const secure = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? '; Secure' : '';
-    res.setHeader('Set-Cookie', `${COOKIE}=${id}; Path=/; Max-Age=315360000; HttpOnly; SameSite=Lax${secure}`);
+    setBuyerCookie(req, res, id);
   }
   return id;
+}
+
+// License key = the buyer id. A paid buyer can copy it and restore access on another
+// browser/device. Keys are random UUIDs (unguessable); restore is also rate-limited per IP.
+const restoreHits = new Map();
+function restoreAllowed(req) {
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '?';
+  const now = Date.now();
+  const hits = (restoreHits.get(ip) || []).filter((t) => now - t < 60_000);
+  hits.push(now);
+  restoreHits.set(ip, hits);
+  if (restoreHits.size > 10_000) restoreHits.clear();
+  return hits.length <= 10;
 }
 
 // ---------- helpers ----------
@@ -170,17 +187,32 @@ async function handle(req, res) {
 
   // Display-only access status for the pricing page. The real gate is /app.
   if (p === '/api/access' && m === 'GET') {
-    const state = await checkPaid(buyerId(req, res));
-    return json(res, 200, { product: PRODUCT_KEY, paid: state === 'paid', state });
+    const user = buyerId(req, res);
+    const state = await checkPaid(user);
+    const out = { product: PRODUCT_KEY, paid: state === 'paid', state };
+    if (state === 'paid') out.licenseKey = user; // shown only to the buyer who owns it
+    return json(res, 200, out);
   }
 
-  if ((p === '/api/checkout' || p === '/api/portal') && m === 'POST') {
+  if ((p === '/api/checkout' || p === '/api/portal' || p === '/api/restore') && m === 'POST') {
     // JSON-only + SameSite=Lax cookie blocks cross-site form posts
     if (!(req.headers['content-type'] || '').startsWith('application/json')) {
       return json(res, 415, { error: 'JSON_REQUIRED' });
     }
     let body;
     try { body = await readJson(req); } catch { return json(res, 400, { error: 'BAD_REQUEST' }); }
+
+    // Restore a license on this browser using a license key
+    if (p === '/api/restore') {
+      if (!restoreAllowed(req)) return json(res, 429, { error: 'TOO_MANY_ATTEMPTS' });
+      const key = typeof body.key === 'string' ? body.key.trim().toLowerCase() : '';
+      if (!BUYER_RE.test(key)) return json(res, 400, { error: 'INVALID_KEY' });
+      const state = await checkPaid(key);
+      if (state === 'paid') { setBuyerCookie(req, res, key); return json(res, 200, { restored: true }); }
+      if (state === 'unpaid') return json(res, 404, { error: 'KEY_NOT_FOUND' });
+      return json(res, 503, { error: 'TRY_AGAIN' });
+    }
+
     const user = buyerId(req, res);
 
     if (p === '/api/checkout') {
