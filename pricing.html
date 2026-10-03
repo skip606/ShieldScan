@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldScan: Pricing</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--pri:oklch(52% 0.19 285);--pri-pale:oklch(94% 0.035 285);--pri-dk:oklch(38% 0.19 285);
+--ok:oklch(60% 0.18 148);--ok-bg:oklch(95% 0.035 148);--warn-bg:oklch(95% 0.05 78);--bad:oklch(55% 0.22 27);
+--bg:oklch(98% 0.004 285);--surf:oklch(99.5% 0.002 285);--brd:oklch(90% 0.012 285);--brd-l:oklch(94% 0.006 285);
+--tx:oklch(18% 0.018 285);--tx2:oklch(42% 0.012 285);--tx3:oklch(58% 0.008 285);
+--f:'DM Sans',system-ui,sans-serif;--m:'DM Mono','SF Mono',monospace}
+body{font-family:var(--f);line-height:1.6;color:var(--tx);background:var(--bg);-webkit-font-smoothing:antialiased}
+.hd{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd-l);background:var(--surf)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem;color:var(--tx);text-decoration:none}
+.logo-i{width:30px;height:30px;background:var(--pri);border-radius:7px;display:grid;place-items:center}
+.lnk{font:inherit;font-size:.85rem;font-weight:600;color:var(--tx2);background:none;border:none;cursor:pointer}
+.lnk:hover{color:var(--pri)}
+main{max-width:720px;margin:0 auto;padding:64px 20px 80px}
+h1{font-size:clamp(1.8rem,4vw,2.5rem);text-align:center;margin-bottom:10px;line-height:1.2}
+h1 em{font-style:normal;color:var(--pri)}
+.sub{text-align:center;color:var(--tx2);max-width:52ch;margin:0 auto 36px}
+.note{border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:.92rem;display:none}
+.note.on{display:block}.note.ok{background:var(--ok-bg)}.note.warn{background:var(--warn-bg)}.note.info{background:var(--pri-pale)}
+.grid{display:grid;gap:16px}
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:14px;padding:26px}
+.card h2{font-size:1.2rem;margin-bottom:4px}
+.kind{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--pri)}
+.price{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid var(--brd-l);margin-top:14px;flex-wrap:wrap}
+.amt{font-size:1.8rem;font-weight:700}.amt small{font-size:.85rem;font-weight:500;color:var(--tx3)}
+.trial{font-size:.78rem;color:var(--tx3)}
+.btn{font-family:var(--f);font-weight:600;font-size:.95rem;padding:11px 22px;border:none;border-radius:9px;background:var(--pri);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--pri-dk)}.btn:disabled{opacity:.5;cursor:wait}
+.btn.ghost{background:transparent;color:var(--tx);border:2px solid var(--brd)}
+.owned{font-weight:600;color:var(--ok)}
+.err{color:var(--bad);font-size:.85rem;margin-top:6px}
+.muted{color:var(--tx3);font-size:.85rem;text-align:center;margin-top:28px}
+.skel{height:150px;border-radius:14px;background:var(--brd-l)}
+</style>
+</head>
+<body>
+<header class="hd">
+<a class="logo" href="/"><div class="logo-i"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>ShieldScan</a>
+<button class="lnk" id="billing" type="button">Manage billing</button>
+</header>
+<main>
+<h1>Know your <em>exposure</em> before attackers do</h1>
+<p class="sub">DNS, SPF, DKIM, DMARC, certificate transparency and HTTP security headers, turned into a plain-English report with step-by-step fixes.</p>
+<div class="note" id="note"></div>
+<div class="grid" id="products"><div class="skel"></div></div>
+<p class="muted">Your license is tied to this browser. Payments are handled securely on a hosted checkout page; we never see your card.</p>
+</main>
+<script>
+const PRODUCT_KEY = 'shieldscan_license'; // product key (not a price) used only for display state
+const $ = (id) => document.getElementById(id);
+function note(kind, html) { const n = $('note'); n.className = 'note on ' + kind; n.innerHTML = html; }
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function fmt(amount, currency) {
+  const nf = new Intl.NumberFormat(undefined, { style: 'currency', currency: currency.toUpperCase() });
+  const digits = nf.resolvedOptions().maximumFractionDigits; // minor units -> major
+  return nf.format(amount / Math.pow(10, digits));
+}
+function uuid() { return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(); }
+
+async function buy(priceKey, btn, errEl) {
+  btn.disabled = true; errEl.textContent = '';
+  try {
+    const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: priceKey, attempt: uuid() }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.url) { location.href = d.url; return; }
+    errEl.textContent = d.error === 'ACCOUNT_NOT_READY' || (d.error || '').endsWith('ACCOUNT_NOT_READY')
+      ? 'Checkout is not open yet. Please try again later.'
+      : 'Could not start checkout. Please try again.';
+  } catch { errEl.textContent = 'Could not reach checkout. Please try again.'; }
+  btn.disabled = false;
+}
+
+function render(products, access) {
+  const wrap = $('products'); wrap.innerHTML = '';
+  if (!products.length) { wrap.appendChild(el('p', 'muted', 'No plans are available right now.')); return; }
+  for (const p of products) {
+    const card = el('div', 'card');
+    card.appendChild(el('div', 'kind', p.kind === 'subscription' ? 'Subscription' : 'One-time purchase'));
+    card.appendChild(el('h2', null, p.name));
+    const owned = p.key === PRODUCT_KEY && access.paid;
+    for (const pr of (p.prices || [])) {
+      const row = el('div', 'price');
+      const left = el('div');
+      const amt = el('div', 'amt', fmt(pr.amount, pr.currency));
+      if (pr.interval) amt.appendChild(el('small', null, ' / ' + pr.interval));
+      left.appendChild(amt);
+      if (pr.trialDays) left.appendChild(el('div', 'trial', pr.trialDays + '-day free trial'));
+      row.appendChild(left);
+      const right = el('div');
+      if (owned) {
+        right.appendChild(el('span', 'owned', 'Owned'));
+      } else {
+        const btn = el('button', 'btn', 'Buy now'); btn.type = 'button';
+        const err = el('div', 'err');
+        btn.onclick = () => buy(pr.key, btn, err);
+        right.appendChild(btn); right.appendChild(err);
+      }
+      row.appendChild(right);
+      card.appendChild(row);
+    }
+    wrap.appendChild(card);
+  }
+}
+
+async function load() {
+  const [pRes, aRes] = await Promise.allSettled([
+    fetch('/api/products', { cache: 'no-store' }).then((r) => r.ok ? r.json() : Promise.reject(r.status)),
+    fetch('/api/access', { cache: 'no-store' }).then((r) => r.ok ? r.json() : Promise.reject(r.status)),
+  ]);
+  const access = aRes.status === 'fulfilled' ? aRes.value : { paid: false, state: 'error' };
+  if (access.paid) {
+    note('ok', 'You own a ShieldScan License. <a class="btn" style="margin-left:10px" href="/app">Open the scanner</a>');
+  } else if (access.state === 'error') {
+    note('warn', "We can't confirm your access right now. <button class='btn ghost' style='margin-left:10px' onclick='location.reload()'>Try again</button>");
+  } else if (new URLSearchParams(location.search).has('locked')) {
+    note('info', 'The scanner unlocks with a ShieldScan License. Grab one below.');
+  }
+  if (pRes.status === 'fulfilled') render(pRes.value.products || [], access);
+  else $('products').innerHTML = "<div class='card'><p>Pricing didn't load. <button class='btn ghost' onclick='location.reload()'>Try again</button></p></div>";
+}
+
+$('billing').onclick = async () => {
+  const b = $('billing'); b.disabled = true;
+  try {
+    const r = await fetch('/api/portal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.url) { location.href = d.url; return; }
+    if (r.status === 404) note('info', 'Nothing to manage here: your license is a one-time purchase with no subscription.');
+    else note('warn', "Billing isn't reachable right now. Please try again in a moment.");
+  } catch { note('warn', "Billing isn't reachable right now. Please try again in a moment."); }
+  b.disabled = false;
+};
+
+load();
+window.addEventListener('pageshow', (e) => { if (e.persisted) load(); }); // re-fetch on back/forward
+</script>
+</body>
+</html>
