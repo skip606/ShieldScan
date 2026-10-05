@@ -1,4 +1,4 @@
-# ShieldScan: tiny Node server (zero dependencies) that serves the app and
+# Topside: tiny Node server (zero dependencies) that serves the app and
 # wires the platform's managed payments. META_API_URL and META_APP_TOKEN are
 # injected by the platform at deploy time and stay server-side.
 FROM node:20-alpine

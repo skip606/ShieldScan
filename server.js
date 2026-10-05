@@ -1,5 +1,5 @@
 'use strict';
-// ShieldScan server: serves the app and wires the platform's managed payments.
+// Topside server: serves the app and wires the platform's managed payments.
 // The platform runs Stripe. This server never touches Stripe or card data; it only
 // calls the platform HTTP API, and it keeps META_APP_TOKEN on the server.
 
@@ -10,6 +10,7 @@ const crypto = require('node:crypto');
 
 const PORT = Number(process.env.PORT) || 8080;
 // Gate on the product KEY, never a price id. Prices and price keys always come from GET /products.
+// Product key kept from the original ShieldScan name on purpose: renaming it would lock out existing buyers.
 const PRODUCT_KEY = 'shieldscan_license';
 const COOKIE = 'ss_buyer';
 const BUYER_RE = /^g_[0-9a-f-]{36}$/;
@@ -145,7 +146,7 @@ function readJson(req, limit = 4096) {
 }
 
 const RETRY_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>ShieldScan: try again</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Topside: try again</title>
 <style>body{font-family:system-ui,sans-serif;background:#f8f7fb;color:#24212b;display:grid;place-items:center;min-height:100vh;margin:0;padding:20px}
 .c{max-width:440px;text-align:center;background:#fff;border:1px solid #e6e3ee;border-radius:14px;padding:36px 28px}
 h1{font-size:1.3rem;margin:0 0 10px}p{color:#5d5868;line-height:1.6;margin:0 0 22px}
@@ -263,7 +264,7 @@ http.createServer((req, res) => {
     else res.end();
   });
 }).listen(PORT, '0.0.0.0', () => {
-  console.log(`ShieldScan listening on 0.0.0.0:${PORT}`);
+  console.log(`Topside listening on 0.0.0.0:${PORT}`);
   if (!process.env.META_API_URL || !process.env.META_APP_TOKEN) {
     console.warn('META_API_URL / META_APP_TOKEN missing: payments stay locked until a fresh deploy injects them.');
   }

@@ -1,8 +1,8 @@
-# ShieldScan — AI External Threat Exposure Scanner
+# Topside — AI External Threat Exposure Scanner
 
 **Know your exposure before attackers do.**
 
-ShieldScan scans a domain's public-facing attack surface and generates a plain-English threat report with prioritized, step-by-step fixes. Built for small businesses that need a useful first pass without enterprise pricing or unnecessary telemetry.
+Topside scans a domain's public-facing attack surface and generates a plain-English threat report with prioritized, step-by-step fixes. Built for small businesses that need a useful first pass without enterprise pricing or unnecessary telemetry.
 
 ## What It Scans
 
@@ -22,11 +22,11 @@ ShieldScan scans a domain's public-facing attack surface and generates a plain-E
 
 ## Pricing
 
-ShieldScan is sold as a one-time **ShieldScan License** (product key `shieldscan_license`).
+Topside (formerly ShieldScan) is sold as a one-time **Topside License** (product key `shieldscan_license`, kept from the old name so existing licenses keep working).
 The price is configured by the owner in the platform dashboard and rendered live on the
 pricing page from `GET /products`. Nothing in this repo hardcodes a price or price key.
 
-ShieldScan is a first-pass awareness tool. It is not a penetration test, compliance certification, or replacement for managed security services.
+Topside is a first-pass awareness tool. It is not a penetration test, compliance certification, or replacement for managed security services.
 
 ## How payments work
 
